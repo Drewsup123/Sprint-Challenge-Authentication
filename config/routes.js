@@ -3,6 +3,8 @@ const bcrypt = require('bcryptjs');
 const db = require('../database/dbConfig.js');
 const jwt = require('jsonwebtoken');
 
+const secret = require('../_secrets/keys').jwtKey;
+
 const { authenticate } = require('./middlewares');
 
 module.exports = server => {
@@ -13,15 +15,16 @@ module.exports = server => {
 };
 
 function generateToken(user) {
+  console.log(user)
   const payload = {
       subject: user.id,
-      username: user.username,
+      username: user.username
   };
 
-  const secret = "Q948573-4958EPOIRJG;LSKFGJQ948TU49387OIJ;LJT9J4";
   const options = {
       expiresIn: '1h',
-  };
+  }
+
   return jwt.sign(payload, secret, options);
 }
 
@@ -42,13 +45,13 @@ function register(req, res) {
 function login(req, res) {
   // implement user login
   const creds = req.body;
-  if(creds){
+  if(creds.username && creds.password){
     // console.log(creds)
     db('users')
     .where({username : creds.username})
     .then(user => {
       if(user && bcrypt.compareSync(creds.password,user[0].password)){
-        const token = generateToken(user[0])
+        const token = generateToken(user[0]);//jwt.sign({username: user.username}, {secret : secret}, { expiresIn: '10h' });
         res.status(200).json({Token : token});
       }else{
         console.log("inside else login block")
