@@ -1,6 +1,7 @@
 const axios = require('axios');
 const bcrypt = require('bcryptjs');
-const db = require('../database/dbConfig.js')
+const db = require('../database/dbConfig.js');
+const jwt = require('jsonwebtoken');
 
 const { authenticate } = require('./middlewares');
 
@@ -10,6 +11,19 @@ module.exports = server => {
   server.get('/api/jokes', authenticate, getJokes);
   server.get('/',(req,res)=>{res.send('Server Running')})//test if running
 };
+
+function generateToken(user) {
+  const payload = {
+      subject: user.id,
+      username: user.username,
+  };
+
+  const secret = "Q948573-4958EPOIRJG;LSKFGJQ948TU49387OIJ;LJT9J4";
+  const options = {
+      expiresIn: '1h',
+  };
+  return jwt.sign(payload, secret, options);
+}
 
 function register(req, res) {
   // implement user registration
@@ -29,14 +43,16 @@ function login(req, res) {
   // implement user login
   const creds = req.body;
   if(creds){
+    // console.log(creds)
     db('users')
     .where({username : creds.username})
     .then(user => {
-      if(user && bcrypt.compareSync(creds.password,user.password)){
-        const token = generateToken(user)
+      if(user && bcrypt.compareSync(creds.password,user[0].password)){
+        const token = generateToken(user[0])
         res.status(200).json({Token : token});
       }else{
-        res.status(401).json({Error : "You shall not pass!"})
+        console.log("inside else login block")
+        res.status(401).json({ERROR : "You shall not pass!"})
       }
     })
     .catch(err =>{
